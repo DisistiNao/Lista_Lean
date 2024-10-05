@@ -285,7 +285,120 @@ section ARITH
 
   -- Exercício
 
-  theorem progress e t : EType e t → ExpVal e ∨ ∃ e', EStep e e' :=
-    sorry
+theorem progress e t : EType e t → ExpVal e ∨ ∃ e', EStep e e' := by
+  intros H
+  induction H with
+  | TZero =>
+      left
+      right
+      exact NatVal.ValZero
+  | TSucc e H1 IH =>
+      cases IH
+      case inl Hval =>
+          cases Hval
+          case inr Hnv =>
+              left
+              right
+              exact NatVal.ValSucc e Hnv
+          case inl h H =>
+              cases H
+              ·
+                contradiction
+              ·
+                contradiction
+      case inr Hstep =>
+          right
+          cases Hstep with | intro e' Hstep1 =>
+          exists Exp.Succ e'
+          apply EStep.ESucc
+          assumption
+  | TTrue =>
+      left
+      left
+      exact BoolVal.ValTrue
+  | TFalse =>
+      left
+      left
+      exact BoolVal.ValFalse
+  | TPred e H1 IH =>
+      cases IH
+      case inl Hval =>
+          cases Hval
+          case inr Hnv =>
+              cases Hnv
+              case ValZero =>
+                  right
+                  exists Exp.Zero
+                  apply EStep.EPredZ
+              case ValSucc n Hn =>
+                  right
+                  exists n
+                  apply EStep.EPredS
+                  assumption
+          case inl h H =>
+              cases H
+              ·
+                contradiction
+              ·
+                contradiction
+      case inr Hstep =>
+          right
+          cases Hstep with | intro e' Hstep1 =>
+          exists Exp.Pred e'
+          apply EStep.EPred
+          assumption
+  | TIsZero e H1 IH =>
+      cases IH
+      case inl Hval =>
+          cases Hval
+          case inr Hnv =>
+              cases Hnv
+              case ValZero =>
+                  right
+                  exists Exp.True
+                  apply EStep.EIsZeroZ
+              case ValSucc n Hn =>
+                  right
+                  exists Exp.False
+                  apply EStep.EIsZeroS
+                  assumption
+          case inl h H =>
+              cases H
+              ·
+                contradiction
+              ·
+                contradiction
+      case inr Hstep =>
+          right
+          cases Hstep with | intro e' Hstep1 =>
+          exists Exp.IsZero e'
+          apply EStep.EIsZero
+          assumption
+  | TIf e1 e2 e3 _ Hcond _ _ IHcond _ _ =>
+      cases IHcond
+      case inl Hval =>
+          cases Hval
+          case inl Hbv =>
+              cases Hbv
+              case ValTrue =>
+                  right
+                  exists e2
+                  apply EStep.EIfT
+              case ValFalse =>
+                  right
+                  exists e3
+                  apply EStep.EIfF
+          case inr h H =>
+              cases H
+              ·
+                contradiction
+              ·
+                contradiction
+      case inr Hstep =>
+          right
+          cases Hstep with | intro e1' Hstep1 =>
+          exists Exp.If e1' e2 e3
+          apply EStep.EIf
+          assumption
 
 end ARITH

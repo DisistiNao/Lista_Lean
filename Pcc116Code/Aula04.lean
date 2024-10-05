@@ -1,247 +1,274 @@
--- Aula 04. Programação funcional e recursividade 
+-- Aula 04. Programação funcional e recursividade
 
 import Mathlib.Tactic.Basic
 
 -- 1. Números Naturais (definidos na biblioteca: Tipo Nat)
 
-inductive N where 
-| zero : N 
-| succ : N → N 
-deriving Repr 
+inductive N where
+| zero : N
+| succ : N → N
+deriving Repr
 -- zero, succ zero, succ (succ zero), ...
 
--- convertendo entre N e Nat 
+-- convertendo entre N e Nat
 
-def toN (n : Nat) : N := 
-  match n with 
-  | 0 => N.zero 
+def toN (n : Nat) : N :=
+  match n with
+  | 0 => N.zero
   | k + 1 => N.succ (toN k)
 
 #eval toN 5
 
--- definindo a adição 
+-- definindo a adição
 
-def plus (n m : N) : N := 
-  match n with 
+def plus (n m : N) : N :=
+  match n with
   | N.zero => m                       -- 1
-  | N.succ n' => N.succ (plus n' m)   -- 2 
+  | N.succ n' => N.succ (plus n' m)   -- 2
 
-open N 
+open N
 
-infixl:60 " .+. " => plus 
+infixl:60 " .+. " => plus
 
--- Lousa: execução de plus (succ (succ zero)) (succ zero) 
--- representando N como números 
+-- Lousa: execução de plus (succ (succ zero)) (succ zero)
+-- representando N como números
 /-
-(succ (succ zero)) .+. (succ zero) = por 2 
-succ ((succ zero) .+. (succ zero)) = por 2 
-succ (succ (zero .+. (succ zero))) = por 1 
+(succ (succ zero)) .+. (succ zero) = por 2
+succ ((succ zero) .+. (succ zero)) = por 2
+succ (succ (zero .+. (succ zero))) = por 1
 succ (succ (succ zero))
 -/
--- Primeiro lemma simples 
+-- Primeiro lemma simples
 
--- obter uma igualdade trivial (x = x) por simplificação 
+-- obter uma igualdade trivial (x = x) por simplificação
 -- dizemos que essa igualdade vale por *definição*
 
-lemma plus_0_l (n : N) : zero .+. n = n := by 
+lemma plus_0_l (n : N) : zero .+. n = n := by
   simp only [plus]
 
--- Segundo lemma 
+-- Segundo lemma
 
 lemma plus_0_r (n : N) : n .+. zero = n := by
-  induction n with 
-  | zero => 
+  induction n with
+  | zero =>
     simp only [plus]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     simp only [plus, IHn']
-    
 
-lemma plus_succ m n : succ (m .+. n) = m .+. succ n := by 
-  induction m with 
-  | zero => 
+
+lemma plus_succ m n : succ (m .+. n) = m .+. succ n := by
+  induction m with
+  | zero =>
     simp only [plus]
-  | succ m' IHm' => 
+  | succ m' IHm' =>
     simp only [plus, IHm']
 
-theorem plus_comm (n m : N) : n .+. m = m .+. n := by 
-  induction n with 
-  | zero => 
+theorem plus_comm (n m : N) : n .+. m = m .+. n := by
+  induction n with
+  | zero =>
     simp only [plus, plus_0_r]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     simp only [plus, IHn', plus_succ]
 
-theorem plus_assoc (n m p) 
-  : n .+. m .+. p = n .+. (m .+. p) := by 
-    induction n with 
-    | zero => 
+theorem plus_assoc (n m p)
+  : n .+. m .+. p = n .+. (m .+. p) := by
+    induction n with
+    | zero =>
       simp only [plus] -- forall . x = x
-    | succ n' IHn' => 
+    | succ n' IHn' =>
       simp only [plus, IHn']
 
--- implementar multiplicação e sua prova de comutatividade 
--- e associatividade. 
+-- implementar multiplicação e sua prova de comutatividade
+-- e associatividade.
 
-def mult (n m : N) : N := 
-  match n with 
-  | N.zero => N.zero 
+def mult (n m : N) : N :=
+  match n with
+  | N.zero => N.zero
   | N.succ n' => m .+. (mult n' m)
 
 infix:65 " .*. " => mult
 
-lemma mult_0_r (n : N) : n .*. N.zero = N.zero := by 
-  induction n with 
-  | zero => 
+lemma mult_0_r (n : N) : n .*. N.zero = N.zero := by
+  induction n with
+  | zero =>
     simp only [mult]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     simp only [mult, plus, IHn']
 
-lemma plus_comm_3 (n m p : N) : 
-  n .+. m .+. p = m .+. n .+. p := by 
-  induction n with 
+lemma plus_comm_3 (n m p : N) :
+  n .+. m .+. p = m .+. n .+. p := by
+  induction n with
   | zero => simp [plus, plus_0_r]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     simp [plus, IHn', ← plus_succ]
 
-lemma mult_succ (m n : N) : 
-  m .*. succ n = m .+. m .*. n := by 
-  induction m with 
-  | zero => 
+lemma mult_succ (m n : N) :
+  m .*. succ n = m .+. m .*. n := by
+  induction m with
+  | zero =>
     simp [mult, plus]
-  | succ m' IHm' => 
+  | succ m' IHm' =>
     simp [mult, plus, IHm']
     simp [← (plus_assoc _ _ (m' .*. n))
          , plus_comm_3]
-    
 
-theorem mult_comm (n m : N) 
-  : n .*. m = m .*. n := by 
-  induction n with 
-  | zero => 
+
+theorem mult_comm (n m : N)
+  : n .*. m = m .*. n := by
+  induction n with
+  | zero =>
     simp only [mult, mult_0_r]
-  | succ n' IHn' => 
-    simp only [mult, IHn', mult_succ] 
+  | succ n' IHn' =>
+    simp only [mult, IHn', mult_succ]
 
--- definição de double 
+-- definição de double
 
-def double (n : N) : N := 
-  match n with 
-  | zero => zero 
+def double (n : N) : N :=
+  match n with
+  | zero => zero
   | succ n' => succ (succ (double n'))
 
-lemma double_correct n : double n = n .+. n := by 
-  induction n with 
-  | zero => 
+lemma double_correct n : double n = n .+. n := by
+  induction n with
+  | zero =>
     simp [double, plus]
-  | succ n' IHn' => 
-    simp [double] 
-    simp [plus] 
-    simp [IHn'] 
+  | succ n' IHn' =>
+    simp [double]
+    simp [plus]
+    simp [IHn']
     simp [plus_succ]
 
-lemma double_correct1 n : double n = (toN 2) .*. n := by 
-  induction n with 
-  | zero => 
-    simp [double] 
-    simp [toN] 
+lemma double_correct1 n : double n = (toN 2) .*. n := by
+  induction n with
+  | zero =>
+    simp [double]
+    simp [toN]
     simp [mult]
     simp [plus]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     simp [double]
     simp [IHn', toN]
     simp [mult, plus]
     simp [plus_succ]
 
--- teste de igualdade 
+-- teste de igualdade
 
--- Prop ≃ Bool: isomorficas. 
+-- Prop ≃ Bool: isomorficas.
 
-def eqN (n m : N) : Bool := 
-  match n , m with 
-  | zero, zero => true 
-  | succ n', succ m' => eqN n' m' 
-  | _ , _ => false 
+def eqN (n m : N) : Bool :=
+  match n , m with
+  | zero, zero => true
+  | succ n', succ m' => eqN n' m'
+  | _ , _ => false
 
-lemma eqN_refl n : eqN n n = true := by 
-  induction n with 
+lemma eqN_refl n : eqN n n = true := by
+  induction n with
   | zero => simp [eqN]
   | succ n' IHn' => simp [eqN, IHn']
 
 -- generalizar a hipótese de indução.
 
 /-
-∀ (x : A), P x -- mais geral 
+∀ (x : A), P x -- mais geral
 
 A → P = ∀ (_ : A), P -- x não ocorre em P
 -/
 
-lemma eqN_sound n m : eqN n m = true → n = m := by 
+lemma eqN_sound n m : eqN n m = true → n = m := by
   revert m
-  induction n with 
+  induction n with
   | zero =>
     intros m
     rcases m with _ | m' <;> simp [eqN]
-  | succ n' IHn' => 
-    intros m 
+  | succ n' IHn' =>
+    intros m
     rcases m with _ | m' <;> simp [eqN]
     apply IHn'
 
-lemma eqN_complete n m 
-  : n = m → eqN n m = true := by 
-  intros Heq 
+lemma eqN_complete n m
+  : n = m → eqN n m = true := by
+  intros Heq
   rw [Heq, eqN_refl]
-  
-lemma eqN_sound_neq n m : eqN n m = false → n ≠ m := sorry 
 
-lemma eqN_complete_neq n m : n ≠ m → eqN n m = false := sorry 
+lemma eqN_sound_neq n m : eqN n m = false → n ≠ m := by
+  revert m
+  induction n with
+  | zero =>
+    intros m
+    rcases m with _ | m' <;> simp [eqN]
+  | succ n' IHn' =>
+    intros m
+    rcases m with _ | m' <;> simp [eqN]
+    apply IHn'
 
-def leb (n m : N) : Bool := 
-  match n, m with 
-  | N.zero, _ => true 
-  | N.succ _, N.zero => false 
-  | N.succ n', N.succ m' => leb n' m' 
 
-infix:60 " .<=. " => leb 
+lemma eqN_complete_neq n m : n ≠ m → eqN n m = false := by
+  simp only [ne_eq]
+  intros H
+  induction n generalizing m with
+  | zero =>
+    cases m with
+    | zero => contradiction
+    | succ m' => simp only [eqN]
+  | succ n' IH =>
+    cases m with
+    | zero => simp only [eqN]
+    | succ m' =>
+      simp only [eqN]
+      have H1 : n' ≠ m' := by
+        intro Hnm
+        apply H
+        rw [Hnm]
+      exact IH m' H1
 
-lemma leb_refl n : n .<=. n = true := by 
-  induction n with 
+def leb (n m : N) : Bool :=
+  match n, m with
+  | N.zero, _ => true
+  | N.succ _, N.zero => false
+  | N.succ n', N.succ m' => leb n' m'
+
+infix:60 " .<=. " => leb
+
+lemma leb_refl n : n .<=. n = true := by
+  induction n with
   | zero => simp [leb]
   | succ n' IHn' => simp [leb, IHn']
 
-lemma leb_trans n m p : n .<=. m → 
-                        m .<=. p → 
-                        n .<=. p := by 
-  revert m p 
-  induction n with 
-  | zero => intros _m _p _H1 _H2 
+lemma leb_trans n m p : n .<=. m →
+                        m .<=. p →
+                        n .<=. p := by
+  revert m p
+  induction n with
+  | zero => intros _m _p _H1 _H2
             simp [leb]
-  | succ n' IHn' => 
+  | succ n' IHn' =>
     intros m p H1 H2
-    rcases m with _ | m' <;> 
-    rcases p with _ | p' <;> 
+    rcases m with _ | m' <;>
+    rcases p with _ | p' <;>
     simp [leb] at *
-    apply (IHn' m') <;> assumption 
+    apply (IHn' m') <;> assumption
 
 
 -- Exercícios: Números em binário
 /-
-Considere o tipo de dados seguinte que representa 
-números em binário de forma que o bit mais significativo 
-esteja mais a direita e não à esquerda, como usual. 
+Considere o tipo de dados seguinte que representa
+números em binário de forma que o bit mais significativo
+esteja mais a direita e não à esquerda, como usual.
 -/
 
 inductive B where
-| Z : B 
-| B0 : B → B 
-| B1 : B → B 
-deriving Repr 
+| Z : B
+| B0 : B → B
+| B1 : B → B
+deriving Repr
 
 /-
 A seguir, mostramos alguns exemplos de números naturais
-e sua representação usando o tipo B 
+e sua representação usando o tipo B
 
-Número natural  Valor do tipo B 
-0               Z 
-1               B1 Z 
+Número natural  Valor do tipo B
+0               Z
+1               B1 Z
 2               B0 (B1 Z)
 3               B1 (B1 Z)
 4               B0 (B0 (B1 Z))
@@ -249,38 +276,85 @@ Número natural  Valor do tipo B
 -/
 
 /-
-Desenvolva a função incr que incrementa de um 
-um valor de tipo B. 
+Desenvolva a função incr que incrementa de um
+um valor de tipo B.
 -/
 
-def incr (b : B) : B := sorry 
+def incr (b : B) : B :=
+  match b with
+  | B.Z => B.B1 B.Z
+  | B.B0 b' => B.B1 b'
+  | B.B1 b' => B.B0 (incr b')
+
+#eval incr B.Z
+#eval incr (B.B1 B.Z)
+#eval incr (B.B0 (B.B1 B.Z))
+#eval incr (B.B1 (B.B0 (B.B1 B.Z)))
+#eval incr (B.B1 (B.B1 (B.B1 B.Z)))
 
 /-
-Desenvolva a função B2N que converte um valor de 
+Desenvolva a função B2N que converte um valor de
 tipo B em um equivalente de tipo N.
 -/
 
-def B2N (b : B) : N := sorry 
+def B2N (b : B) : N :=
+  match b with
+  | B.Z => N.zero
+  | B.B0 b' => (B2N b') .+. (B2N b')
+  | B.B1 b' => N.succ ((B2N b') .+. (B2N b'))
+
+#eval B2N B.Z
+#eval B2N (B.B1 B.Z)
+#eval B2N (B.B0 (B.B1 B.Z))
+#eval B2N (B.B1 (B.B1 B.Z))
+#eval B2N (B.B0 (B.B0 (B.B1 B.Z)))
+#eval B2N (B.B1 (B.B0 (B.B1 B.Z)))
+#eval B2N (B.B0 (B.B1 (B.B1 B.Z)))
+#eval B2N (B.B1 (B.B1 (B.B1 B.Z)))
+
+#eval B2N (B.B1 (B.B1 (B.B1 (B.B1 B.Z))))
+#eval toN 7
 
 /-
-Desenvolva a função N2B que converte um valor de 
-tipo N em um equivalente de tipo B. Dica: use a 
-função incr. 
+Desenvolva a função N2B que converte um valor de
+tipo N em um equivalente de tipo B. Dica: use a
+função incr.
 -/
 
-def N2B (n : N) : B := sorry 
+def N2B (n : N) : B :=
+  match n with
+  | N.zero => B.Z
+  | N.succ n' => incr (N2B n')
+
+#eval N2B (succ zero)
+#eval N2B (succ (succ zero))
+#eval N2B (succ (succ (succ zero)))
+#eval N2B (succ (succ (succ (succ zero))))
 
 /-
-Prove que a operação incr preserva a função 
+Prove que a operação incr preserva a função
 B2N.
 -/
 
-lemma incr_preserves_b2n b : 
-  B2N (incr b) = succ (B2N b) := sorry 
+lemma incr_preserves_b2n b :
+  B2N (incr b) = succ (B2N b) := by
+  induction b with
+  | Z =>
+    simp [incr, B2N, plus]
+  | B0 b' =>
+    simp [incr, B2N]
+  | B1 b' IHb' =>
+    simp [B2N, IHb', plus, plus_succ]
 
 /-
-Utilizando o lema anterior, prove que as funções 
+Utilizando o lema anterior, prove que as funções
 B2N e N2B são inversas.
 -/
 
-theorem N2B2N n : B2N (N2B n) = n := sorry 
+theorem N2B2N n : B2N (N2B n) = n := by
+  induction n with
+  | zero =>
+    simp [N2B, B2N]
+  | succ n' IHn' =>
+    simp [N2B, incr_preserves_b2n]
+    exact IHn'
